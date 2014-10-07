@@ -15,11 +15,18 @@ function ClipboardFactory($rootScope, PathFactory) {
     
     return {
         /**
-         * Empty clipboard
-         * 
-         * @returns ClipboardFactory
+         * Check if clipboard contains a template or only a part of current Path
+         * @returns {boolean}
          */
-        clear: function() {
+        isFromTemplate: function () {
+            return clipboardFromTemplates;
+        },
+
+        /**
+         * Empty clipboard
+         * @returns {ClipboardFactory}
+         */
+        clear: function () {
             clipboard = null;
             clipboardFromTemplates = false;
             this.setPasteDisabled(true);
@@ -29,14 +36,14 @@ function ClipboardFactory($rootScope, PathFactory) {
         
         /**
          * Copy selected steps into clipboard
-         * 
-         * @param steps
-         * @param fromTemplates
-         * @returns ClipboardFactory
+         * @param   {Array}   steps
+         * @param   {boolean} fromTemplates
+         * @returns {ClipboardFactory}
          */
-        copy: function(steps, fromTemplates) {
+        copy: function (steps, fromTemplates) {
             clipboard = steps;
             clipboardFromTemplates = fromTemplates || false;
+
             this.setPasteDisabled(false);
             
             return this;
@@ -44,18 +51,16 @@ function ClipboardFactory($rootScope, PathFactory) {
         
         /**
          * Paste steps form clipboards into current Path tree
-         * 
-         * @param step
-         * @returns ClipboardFactory
+         * @param   {object} step
+         * @returns {ClipboardFactory}
          */
-        paste: function(step) {
+        paste: function (step) {
             if (null !== clipboard) {
-                // Clone voir : http://stackoverflow.com/questions/122102/most-efficient-way-to-clone-an-object
-                var stepCopy = jQuery.extend(true, {}, clipboard);
+                var stepCopy = angular.extend({}, clipboard);
                 
                 // Replace IDs before inject steps in path
                 this.replaceStepsId(stepCopy);
-                this.replaceResourcesId(stepCopy);
+                this.replaceResourcesId(stepCopy, []);
 
                 if (!clipboardFromTemplates) {
                     stepCopy.name = stepCopy.name + '_copy';
@@ -70,30 +75,31 @@ function ClipboardFactory($rootScope, PathFactory) {
         },
         
         /**
-         * 
-         * @param step
-         * @returns ClipboardFactory
+         * Generate new local ids for resources
+         * @param   {object} step
+         * @param   {Array}  replacedIds
+         * @returns {ClipboardFactory}
          */
-        replaceResourcesId: function(step, replacedIds) {
+        replaceResourcesId: function (step, replacedIds) {
             if (typeof replacedIds === 'undefined' || null === replacedIds) {
-                var replacedIds = [];
+                replacedIds = [];
             }
 
             if (typeof step.resources !== 'undefined' && step.resources !== null && step.resources.length !== 0) {
                 for (var i = 0; i < step.resources.length; i++) {
-                    var newId = PathFactory.getNextResourceId();
-
                     // Store ID to update excluded resources
-                    replacedIds[step.resources[i].id] = newId;
+                    replacedIds[step.resources[i].id] = PathFactory.getNextResourceId();
 
                     // Update resource ID
                     step.resources[i].id = PathFactory.getNextResourceId();
 
                     // Check excluded resources
                     for (var oldId in replacedIds) {
-                        var pos = step.excludedResources.indexOf(oldId);
-                        if (-1 !== pos) {
-                            step.excludedResources[pos] = replacedIds[oldId];
+                        if (replacedIds.hasOwnProperty(oldId)) {
+                            var pos = step.excludedResources.indexOf(oldId);
+                            if (-1 !== pos) {
+                                step.excludedResources[pos] = replacedIds[oldId];
+                            }
                         }
                     }
                 }
@@ -109,11 +115,11 @@ function ClipboardFactory($rootScope, PathFactory) {
         },
         
         /**
-         * 
-         * @param step
-         * @returns ClipboardFactory
+         * Generate new local ids for steps
+         * @param   {object} step
+         * @returns {ClipboardFactory}
          */
-        replaceStepsId: function(step) {
+        replaceStepsId: function (step) {
             step.id = PathFactory.getNextStepId();
             step.resourceId = null;
 
@@ -126,20 +132,21 @@ function ClipboardFactory($rootScope, PathFactory) {
         },
         
         /**
-         * 
-         * @returns boolean
+         * Check if paste feature is enabled or not
+         * @returns {boolean}
          */
-        getPasteDisabled: function() {
+        getPasteDisabled: function () {
             return $rootScope.pasteDisabled;
         },
         
         /**
-         * 
-         * @param data
-         * @returns ClipboardFactory
+         * Enable or Disable paste feature
+         * @param   {boolean} disabled
+         * @returns {ClipboardFactory}
          */
-        setPasteDisabled: function(data) {
-            $rootScope.pasteDisabled = data;
+        setPasteDisabled: function (disabled) {
+            $rootScope.pasteDisabled = disabled;
+
             return this;
         }
     };

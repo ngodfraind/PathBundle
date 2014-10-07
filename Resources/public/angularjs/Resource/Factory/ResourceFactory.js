@@ -4,8 +4,6 @@
  * Resource Factory
  */ 
 function ResourceFactory(PathFactory) {
-    var resource = null;
-    
     // Base template used to create new resource
     var baseResource = {
         id                  : null,
@@ -17,41 +15,22 @@ function ResourceFactory(PathFactory) {
     
     return {
         /**
-         * 
+         * Create a new Resource shell
          * @returns object
          */
-        getResource: function() {
-            return resource;
-        },
-        
-        /**
-         * 
-         * @param data
-         * @returns ResourceFactory
-         */
-        setResource: function(data) {
-            resource = data;
-            
-            return this;
-        },
-        
-        /**
-         * 
-         * @returns object
-         */
-        generateNewResource: function() {
-            var newResource = jQuery.extend(true, {}, baseResource);
+        generateNewResource: function () {
+            var newResource = angular.extend({}, baseResource);
             newResource.id = PathFactory.getNextResourceId();
             
             return newResource;
         },
         
         /**
-         * 
-         * @param stepToFind
-         * @returns object
+         * Get inherited resources for a given step
+         * @param   {object} stepToFind
+         * @returns {object}
          */
-        getInheritedResources: function(stepToFind) {
+        getInheritedResources: function (stepToFind) {
             var stepFound = false;
             var inheritedResources = [];
 
@@ -70,12 +49,13 @@ function ResourceFactory(PathFactory) {
         },
         
         /**
-         * @param stepToFind
-         * @param currentStep
-         * @param inheritedResources
-         * @returns boolean
+         * Search inherited resources for a given step
+         * @param {object} stepToFind
+         * @param {object} currentStep
+         * @param {Array} inheritedResources
+         * @returns {boolean}
          */
-        retrieveInheritedResources: function(stepToFind, currentStep, inheritedResources) {
+        retrieveInheritedResources: function (stepToFind, currentStep, inheritedResources) {
             var stepFound = false;
             
             if (stepToFind.id !== currentStep.id && typeof currentStep.children !== 'undefined' && null !== currentStep.children) {

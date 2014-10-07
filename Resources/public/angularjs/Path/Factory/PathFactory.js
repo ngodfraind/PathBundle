@@ -3,15 +3,15 @@
 /**
  * Path Factory
  */
-function PathFactory($http, $q) {
+function PathFactory() {
     var path = null;
     var maxStepId = 0;
     var maxResourceId = 0;
 
     return {
         /**
-         *
-         * @returns PathFactory
+         * Empty current Path
+         * @returns {PathFactory}
          */
         clear: function() {
             path = null;
@@ -22,8 +22,8 @@ function PathFactory($http, $q) {
         },
 
         /**
-         *
-         * @returns object
+         * Get the current Path
+         * @returns {object}
          */
         getPath: function() {
             return path;
@@ -32,7 +32,7 @@ function PathFactory($http, $q) {
         /**
          *
          * @param data
-         * @returns PathFactory
+         * @returns {PathFactory}
          */
         setPath: function(data) {
             // Store current path
@@ -55,6 +55,8 @@ function PathFactory($http, $q) {
                     this.updateStepLevel(step, currentLevel);
                 }
             }
+
+            return this;
         },
 
         updateStepLevel: function (step, currentLevel) {
@@ -67,13 +69,15 @@ function PathFactory($http, $q) {
                     this.updateStepLevel(nextStep, nextLevel);
                 }
             }
+
+            return this;
         },
 
         /**
          * Retrieve step in path using its ID
          *
-         * @param stepId
-         * @returns object
+         * @param {number} stepId
+         * @returns {object}
          */
         getStepById: function(stepId) {
             function search(stepId, currentStep) {
@@ -109,7 +113,7 @@ function PathFactory($http, $q) {
 
         /**
          *
-         * @returns Integer
+         * @returns {number}
          */
         getMaxStepId: function() {
             maxStepId = 1;
@@ -125,8 +129,8 @@ function PathFactory($http, $q) {
 
         /**
          *
-         * @param step
-         * @returns PathFactory
+         * @param {object} step
+         * @returns {PathFactory}
          */
         retrieveMaxStepId: function(step) {
             // Check current step
@@ -146,7 +150,7 @@ function PathFactory($http, $q) {
 
         /**
          *
-         * @returns Integer
+         * @returns {number}
          */
         getNextStepId: function() {
             if (0 === maxStepId) {
@@ -159,7 +163,7 @@ function PathFactory($http, $q) {
 
         /**
          *
-         * @returns Integer
+         * @returns {number}
          */
         getMaxResourceId: function() {
             maxResourceId = 1;
@@ -175,8 +179,8 @@ function PathFactory($http, $q) {
 
         /**
          *
-         * @param step
-         * @returns PathFactory
+         * @param {object} step
+         * @returns {PathFactory}
          */
         retrieveMaxResourceId: function(step) {
             if (typeof step.resources != 'undefined' && null !== step.resources) {
@@ -190,8 +194,8 @@ function PathFactory($http, $q) {
 
             // Check step children
             if (typeof step.children != 'undefined' && null !== step.children) {
-                for (var i = 0; i < step.children.length; i++) {
-                    this.retrieveMaxResourceId(step.children[i]);
+                for (var j = 0; j < step.children.length; j++) {
+                    this.retrieveMaxResourceId(step.children[j]);
                 }
             }
 
@@ -200,7 +204,7 @@ function PathFactory($http, $q) {
 
         /**
          *
-         * @returns Integer
+         * @returns {number}
          */
         getNextResourceId: function() {
             if (0 === maxResourceId) {
@@ -212,20 +216,31 @@ function PathFactory($http, $q) {
             return maxResourceId;
         },
 
+        /**
+         *
+         * @param {object} step
+         * @returns {boolean}
+         */
         checkStepExists: function(step) {
             var stepFound = false;
 
             function find(stepToFind, currentStep) {
+                var ret = false;
                 if (currentStep.id === stepToFind.id) {
-                    return true;
+                    ret = true;
                 }
                 else if (typeof currentStep.children != 'undefined' && null !== currentStep.children) {
                     for (var i = 0; i < currentStep.children.length; i++) {
                         var current = currentStep.children[i];
 
-                        return find(stepToFind, current);
+                        ret = find(stepToFind, current);
+                        if (ret) {
+                            break;
+                        }
                     }
                 }
+
+                return ret;
             }
 
             if (null !== path && typeof path.steps !== 'undefined' && null !== path.steps) {
@@ -239,11 +254,11 @@ function PathFactory($http, $q) {
         },
 
         /**
-         *
-         * @param newStep
-         * @returns PathFactory
+         * Replace a step by its updated version
+         * @param   {object} newStep
+         * @returns {PathFactory}
          */
-        replaceStep: function(newStep) {
+        replaceStep: function (newStep) {
             if (null !== path && typeof path.steps !== 'undefined' && null !== path.steps) {
                 var stepFound = false;
                 for (var i = 0; i < path.steps.length; i++) {
@@ -258,10 +273,10 @@ function PathFactory($http, $q) {
         },
 
         /**
-         *
-         * @param currentStep
-         * @param newStep
-         * @returns boolean
+         * Replace a step by another
+         * @param   {object} currentStep
+         * @param   {object} newStep
+         * @returns {boolean}
          */
         searchStepToReplace: function(currentStep, newStep) {
             var stepFound = false;
@@ -282,21 +297,23 @@ function PathFactory($http, $q) {
         },
 
         /**
-         *
-         * @param oldStep
-         * @param newStep
-         * @returns PathFactory
+         * Update step properties from a new step
+         * @param   {object} oldStep
+         * @param   {object} newStep
+         * @returns {PathFactory}
          */
         updateStep: function(oldStep, newStep) {
             // Add all newStep properties
-            for (var prop in newStep) {
-                oldStep[prop] = newStep[prop];
+            for (var propToUpdate in newStep) {
+                if (newStep.hasOwnProperty(propToUpdate)) {
+                    oldStep[propToUpdate] = newStep[propToUpdate];
+                }
             }
 
             // Remove properties which no longer exists in new step
-            for (var prop in oldStep) {
-                if (typeof (newStep[prop]) == 'undefined') {
-                    delete oldStep[prop];
+            for (var propToRemove in oldStep) {
+                if (oldStep.hasOwnProperty(propToRemove) && typeof (newStep[propToRemove]) == 'undefined') {
+                    delete newStep[propToRemove];
                 }
             }
 
@@ -305,9 +322,8 @@ function PathFactory($http, $q) {
       
         /**
          * Remove references to specified resource in all path
-         * 
-         * @param resourceId  resource's id to remove
-         * @returns PathFactory
+         * @param   {number} resourceId  resource's id to remove
+         * @returns {PathFactory}
          */
         removeResource: function(resourceId) {
             function removeRefToResource(step) {
@@ -321,7 +337,7 @@ function PathFactory($http, $q) {
                 }
                 
                 if (typeof step.children != 'undefined' && null !== step.children) {
-                 // Check children
+                    // Check children
                     for (var j = 0; j < step.children.length; j++) {
                         removeRefToResource(step.children[j]);
                     }
@@ -334,6 +350,66 @@ function PathFactory($http, $q) {
                 }
             }
             
+            return this;
+        },
+
+        /**
+         * Remove all resources of sub tree
+         * @params  {object} step
+         * @returns {PathFactory}
+         */
+        removeAllResources: function (step) {
+            // Remove primary resource
+            step.resources = [];
+
+            // Remove secondary resources
+            step.primaryResource = null;
+
+            // Empty excluded resources array
+            step.excludedResources = [];
+
+            // Remove activity
+            step.activityId = null;
+
+            // Jump to children
+            if (step.children) {
+                for (var i = 0; i < step.children.length; i++) {
+                    this.removeAllResources(step.children[i]);
+                }
+            }
+
+            return this;
+        },
+
+        /**
+         * Mark all resources of sub tree to duplicate them on save
+         * @param step
+         */
+        duplicateAllResources: function (step) {
+            // Mark primary resource
+            if (step.primaryResource) {
+                step.primaryResource.toDuplicate = true;
+            }
+
+            // Mark activity
+            if (step.activityId) {
+                step.toDuplicate = true;
+            }
+
+            // Mark secondary resources
+            if (step.resources) {
+                for (var i = 0; i < step.resources.length; i++) {
+                    step.resources[i].toDuplicate = true;
+                }
+            }
+
+            // Jump to children
+            if (step.children) {
+                for (var i = 0; i < step.children.length; i++) {
+                    this.duplicateAllResources(step.children[i]);
+                }
+            }
+
             return this;
         }
     };

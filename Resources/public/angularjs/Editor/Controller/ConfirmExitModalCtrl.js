@@ -22,7 +22,7 @@ function ConfirmExitModalCtrl($scope, $modalInstance) {
      * Abort exit
      * @returns void
      */
-    $scope.cancel = function() {
+    $scope.cancel = function () {
         $modalInstance.dismiss('cancel');
     };
 }

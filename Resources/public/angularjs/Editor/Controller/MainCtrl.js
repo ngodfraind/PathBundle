@@ -27,19 +27,19 @@ function MainCtrl($scope, $modal, HistoryFactory, ClipboardFactory, PathFactory,
     $scope.previewStep = null;
 
     $scope.saveAndClose = false;
+    $scope.duplicateResources = false;
 
     /**
      * Update History when general data change
      */
-    $scope.updateHistory = function() {
+    $scope.updateHistory = function () {
         HistoryFactory.update($scope.path);
     };
 
     /**
      * Display step in the preview zone
-     * @returns void
      */
-    $scope.setPreviewStep = function(step) {
+    $scope.setPreviewStep = function (step) {
         // We are not editing a step => we can change the preview
         var isRootStep = false;
         var rootStep = null;
@@ -64,9 +64,8 @@ function MainCtrl($scope, $modal, HistoryFactory, ClipboardFactory, PathFactory,
     
     /**
      * Reload preview step to apply last changes
-     * @returns void
      */
-    $scope.updatePreviewStep = function() {
+    $scope.updatePreviewStep = function () {
         // Update preview step
         var step = null;
         if (null !== $scope.previewStep) {
@@ -81,26 +80,50 @@ function MainCtrl($scope, $modal, HistoryFactory, ClipboardFactory, PathFactory,
 
     /**
      * Copy data into clipboard
-     * @returns void
      */
-    $scope.copy = function(data) {
-        ClipboardFactory.copy(data);
+    $scope.copy = function (data, fromTemplate) {
+        ClipboardFactory.copy(data, fromTemplate);
     };
 
     /**
      * Paste current clipboard content
-     * @returns void
      */
-    $scope.paste = function(step) {
-        ClipboardFactory.paste(step);
-        HistoryFactory.update($scope.path);
+    $scope.paste = function (step) {
+        if (ClipboardFactory.isFromTemplate()) {
+            // If it's a template, tell to user how he wants to manage resources
+            var modalInstance = $modal.open({
+                templateUrl: EditorApp.webDir + 'bundles/innovapath/angularjs/Template/Partial/template-resources.html',
+                controller: 'TemplateResourcesModalCtrl',
+                scope: $scope
+            });
+
+            modalInstance.result.then(function (manageResources) {
+                switch (manageResources) {
+                    case 'keep':
+                        break;
+                    case 'duplicate':
+                        // Resources will be duplicated when path is saved
+                        break;
+                    case 'remove':
+                        // Remove resources from Path
+                        break;
+                }
+
+                ClipboardFactory.paste(step);
+                HistoryFactory.update($scope.path);
+
+                return true;
+            });
+        } else {
+            ClipboardFactory.paste(step);
+            HistoryFactory.update($scope.path);
+        }
     };
 
     /**
      * Undo last user modifications
-     * @returns void
      */
-    $scope.undo = function() {
+    $scope.undo = function () {
         HistoryFactory.undo();
         $scope.path = PathFactory.getPath();
 
@@ -109,9 +132,8 @@ function MainCtrl($scope, $modal, HistoryFactory, ClipboardFactory, PathFactory,
 
     /**
      * Redo last history modifications
-     * @returns void
      */
-    $scope.redo = function() {
+    $scope.redo = function () {
         HistoryFactory.redo();
         $scope.path = PathFactory.getPath();
 
@@ -132,7 +154,7 @@ function MainCtrl($scope, $modal, HistoryFactory, ClipboardFactory, PathFactory,
                 scope: $scope
             });
 
-            modalInstance.result.then(function(method) {
+            modalInstance.result.then(function (method) {
                 if ('save' === method) {
                     $scope.$emit('saveAndClose');
                 }

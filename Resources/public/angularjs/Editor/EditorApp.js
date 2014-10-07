@@ -33,6 +33,7 @@ EditorApp.controller('GlobalCtrl', GlobalCtrl);
 EditorApp.controller('ScenarioCtrl', ScenarioCtrl);
 EditorApp.controller('StepCtrl', StepCtrl);
 EditorApp.controller('ConfirmExitModalCtrl', ConfirmExitModalCtrl);
+EditorApp.controller('TemplateResourcesModalCtrl', TemplateResourcesModalCtrl);
 EditorApp.filter('path_to_json', PathToJsonFilter);
 
 // Steps

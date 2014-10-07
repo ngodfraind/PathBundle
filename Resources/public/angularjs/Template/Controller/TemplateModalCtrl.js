@@ -40,22 +40,6 @@ function TemplateModalCtrl($scope, $http, $modalInstance, StepFactory, TemplateF
      * @returns void
      */
     $scope.save = function (formTemplate) {
-        function removeResources(step) {
-            step.excludedResources = [];
-            step.resources = [];
-            
-            if (step.children.length !== 0) {
-                for (var i = 0; i < step.children.length; i++) {
-                    removeResources(step.children[i]);
-                }
-            }
-        }
-        
-        if (!formTemplate.withResources) {
-            // No need to save step resources => remove them
-            removeResources(formTemplate.structure);
-        }
-        
         var method = null;
         var route = null;
         
@@ -63,8 +47,7 @@ function TemplateModalCtrl($scope, $http, $modalInstance, StepFactory, TemplateF
         data += 'innova_path_template[name]=' + formTemplate.name;
         data += '&innova_path_template[description]=' + formTemplate.description;
         data += '&innova_path_template[structure]=' + encodeURIComponent(angular.toJson(formTemplate.structure));
-        
-        
+
         if (editTemplate) {
             // Update existing path
             method = 'PUT';
