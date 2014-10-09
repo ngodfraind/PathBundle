@@ -186,6 +186,9 @@ class EditorController {
     {
         $this->pathManager->checkAccess('EDIT', $path);
 
+        // Update path structure from data
+        $path->updateStructure();
+
         return $this->renderEditor($workspace, $path, 'PUT');
     }
 

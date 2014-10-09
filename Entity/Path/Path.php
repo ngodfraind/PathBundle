@@ -262,10 +262,30 @@ class Path extends AbstractResource implements PathInterface
                     'children'     => $steps,
                 ),
             );
-        }          
+        }
     
         $this->setStructure(json_encode($structure));
         
+        return $this;
+    }
+
+    /**
+     * Update JSON structure from Path data
+     */
+    public function updateStructure()
+    {
+        $structure = array (
+            'name' => $this->getName(),
+            'description' => $this->getDescription(),
+            'steps' => array (),
+        );
+
+        foreach ($this->steps as $step) {
+
+        }
+
+        /*$this->setStructure(json_encode($structure));*/
+
         return $this;
     }
 

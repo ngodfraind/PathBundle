@@ -6,9 +6,14 @@
 function MainCtrl($scope, $modal, HistoryFactory, ClipboardFactory, PathFactory, AlertFactory, ResourceFactory) {
     $scope.path = EditorApp.currentPath;
     PathFactory.setPath($scope.path);
-    if (null === $scope.path.name || $scope.path.name.length === 0) {
-        // Add default name to Root step
-        if (undefined != $scope.path.steps[0]) {
+
+    if (undefined != $scope.path.steps[0] && (null === $scope.path.steps[0].name || $scope.path.steps[0].name.length !== 0)) {
+        // Root step has no name
+        if (null !== $scope.path.name && $scope.path.name.length !== 0) {
+            // Give the same name than the path
+            $scope.path.steps[0].name = $scope.path.name;
+        } else {
+            // Give a default name
             $scope.path.steps[0].name = Translator.get('path_editor:root_default_name');
         }
     }
@@ -27,7 +32,6 @@ function MainCtrl($scope, $modal, HistoryFactory, ClipboardFactory, PathFactory,
     $scope.previewStep = null;
 
     $scope.saveAndClose = false;
-    $scope.duplicateResources = false;
 
     /**
      * Update History when general data change
@@ -140,6 +144,10 @@ function MainCtrl($scope, $modal, HistoryFactory, ClipboardFactory, PathFactory,
         $scope.updatePreviewStep();
     };
 
+    /**
+     * Close editor
+     * @param {string} returnUrl
+     */
     $scope.closeEditor = function (returnUrl) {
         if (0 === HistoryFactory.getHistoryState()) {
             // Path is not modified => exit without confirm
