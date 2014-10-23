@@ -116,7 +116,7 @@ class PublishingManager
      * Create all needed Entities from JSON structure created by the Editor
      * @param  \Innova\PathBundle\Entity\Path\Path $path
      * @throws \Exception
-     * @return \Innova\PathBundle\Manager\PublishingManager
+     * @return boolean
      */
     public function publish(Path $path)
     {
@@ -141,7 +141,7 @@ class PublishingManager
         $this->path->setPublished(true);
         $this->path->setModified(false);
 
-        // Manage rigths
+        // Manage rights
         $this->manageRights();
 
         // Persist data
@@ -151,7 +151,7 @@ class PublishingManager
         // End Publishing
         $this->end();
         
-        return $this;
+        return true;
     }
     
     /**
@@ -188,7 +188,7 @@ class PublishingManager
             $this->publishPropagatedResources($step, $propagatedResources, $excludedResources);
 
             // Store step to know it doesn't have to be deleted when we will clean the path
-            $processedSteps[$step->getId()] = $step;
+            $processedSteps[] = $step;
     
             // Process children of current step
             if (!empty($stepStructure->children)) {
@@ -208,7 +208,9 @@ class PublishingManager
                 }
 
                 $childrenLevel = $level + 1;
-                $childrenSteps = $this->publishSteps($childrenLevel, $step, $stepStructure->children, $propagatedResources + $currentPropagatedResources);
+
+                $propagatedResources = array_merge($propagatedResources, $currentPropagatedResources);
+                $childrenSteps = $this->publishSteps($childrenLevel, $step, $stepStructure->children, $propagatedResources);
     
                 // Store children steps
                 $processedSteps = $processedSteps + $childrenSteps;
@@ -280,7 +282,7 @@ class PublishingManager
      */
     protected function cleanSteps(array $neededSteps = array (), array $existingSteps = array ())
     {
-        $toRemove = array_diff_key($existingSteps, $neededSteps);
+        $toRemove = array_diff($existingSteps, $neededSteps);
         foreach ($toRemove as $stepToRemove) {
             $this->path->removeStep($stepToRemove);
             $this->om->remove($stepToRemove);
@@ -300,31 +302,14 @@ class PublishingManager
 
         if (!empty($nodes)) {
             $pathRights = $this->path->getResourceNode()->getRights();
-            $user = $this->security->getToken()->getUser();
 
-            // This piece of code is copied from ActivityManager
-            $nodesInitialized = array ();
             foreach ($nodes as $node) {
-                $isNodeCreator = $node->getCreator() === $user;
-                $ws = $node->getWorkspace();
-                $roleWsManager = $this->om->getRepository('ClarolineCoreBundle:Role')->findManagerRole($ws);
-                $isWsManager = $user->hasRole($roleWsManager);
-
-                if ($isNodeCreator || $isWsManager) {
-                    $nodesInitialized[] = $node;
+                foreach ($pathRights as $right) {
+                    if ($right->getMask() & 1) {
+                        $this->rightsManager->editPerms($right->getMask(), $right->getRole(), $node, true);
+                    }
                 }
             }
-
-            $rolesInitialized = array ();
-            foreach ($pathRights as $right) {
-                $role = $right->getRole();
-
-                if (!strpos('_' . $role->getName(), 'ROLE_WS_MANAGER') && $right->getMask() & 1) {
-                    $rolesInitialized[] = $role;
-                }
-            }
-
-            $this->rightsManager->initializePermissions($nodesInitialized, $rolesInitialized);
         }
 
         return $this;

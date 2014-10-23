@@ -56,13 +56,27 @@ class PathManager
         $this->utils           = $utils;
     }
 
-    public function checkAccess($actionName, Path $path, Workspace $workspace = null)
+    /**
+     * Check if a user has sufficient rights to execute action on Path
+     * @param  string                                           $action
+     * @param  \Innova\PathBundle\Entity\Path\Path              $path
+     * @param  \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
+     * @throws \Symfony\Component\Finder\Exception\AccessDeniedException
+     */
+    public function checkAccess($action, Path $path, Workspace $workspace = null)
     {
-        if (false === $this->isAllow($actionName, $path, $workspace)) {
+        if (false === $this->isAllow($action, $path, $workspace)) {
             throw new AccessDeniedException();
         }
     }
 
+    /**
+     * Return if a user has sufficient rights to execute action on Path
+     * @param  string                                           $actionName
+     * @param  \Innova\PathBundle\Entity\Path\Path              $path
+     * @param  \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
+     * @return boolean
+     */
     public function isAllow($actionName, Path $path, Workspace $workspace = null)
     {
         if ($workspace && $actionName === 'CREATE') {
@@ -97,8 +111,27 @@ class PathManager
     }
 
     /**
+     * Get all Paths of the Platform
+     * @param bool $toPublish If false, returns all paths, if true returns only paths which need publishing
+     */
+    public function getPlatformPaths($toPublish = false)
+    {
+        return $this->om->getRepository('InnovaPathBundle:Path\Path')->findPlatformPaths($toPublish);
+    }
+
+    /**
+     * Get all Paths of a Workspace
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
+     * @param bool $toPublish If false, returns all paths, if true returns only paths which need publishing
+     */
+    public function getWorkspacePaths(Workspace $workspace, $toPublish = false)
+    {
+        return $this->om->getRepository('InnovaPathBundle:Path\Path')->findWorkspacePaths($workspace, $toPublish);
+    }
+
+    /**
      * Find accessible Paths
-     * @param Workspace $workspace
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
      * @return array
      */
     public function findAccessibleByUser(Workspace $workspace = null)
@@ -114,7 +147,7 @@ class PathManager
 
         $entities = $this->om->getRepository('InnovaPathBundle:Path\Path')->findAccessibleByUser($roots, $userRoles);
 
-        // Check edit and delete acces for paths
+        // Check edit and delete access for paths
         $paths = array ();
         foreach ($entities as $entity) {
             $paths[] = array (

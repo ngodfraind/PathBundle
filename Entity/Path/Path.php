@@ -37,7 +37,8 @@ class Path extends AbstractResource implements PathInterface
      * Steps linked to the path
      * @var \Doctrine\Common\Collections\ArrayCollection
      * 
-     * @ORM\OneToMany(targetEntity="Innova\PathBundle\Entity\Step", mappedBy="path", indexBy="id")
+     * @ORM\OneToMany(targetEntity="Innova\PathBundle\Entity\Step", mappedBy="path", indexBy="id", cascade={"persist", "remove"})
+     * @ORM\OrderBy({"order" = "ASC"})
      */
     protected $steps;
 
@@ -204,8 +205,7 @@ class Path extends AbstractResource implements PathInterface
         }
         
         $root = null;
-        foreach ($this->steps as $step)
-        {
+        foreach ($this->steps as $step) {
             if (null === $step->getParent()) {
                 // Root step found
                 $root = $step;
@@ -301,5 +301,19 @@ class Path extends AbstractResource implements PathInterface
         }
 
         return $workspace;
+    }
+
+    /**
+     * Wrapper to access creator of the Path
+     * @return \Claroline\CoreBundle\Entity\User
+     */
+    public function getCreator()
+    {
+        $creator = null;
+        if (!empty($this->resourceNode)) {
+            $creator = $this->resourceNode->getCreator();
+        }
+
+        return $creator;
     }
 }
