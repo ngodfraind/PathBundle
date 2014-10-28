@@ -250,16 +250,21 @@ class Path extends AbstractResource implements PathInterface
         );
         
         if (!empty($steps)) {
+            // Rename first step to give it the same name as the Path
+            if (!empty($steps[0])) {
+                $steps[0]['name'] = $this->getName();
+            }
+
             $structure['steps'] = $steps;
         } else {
-             $structure['steps'] = array (
+            $structure['steps'] = array (
                 array (
-                    'id'           => 1,
-                    'lvl'          => 0,
-                    'resourceId'   => null,
-                    'name'         => $this->getName(),
-                    'withTutor'    => false,
-                    'children'     => $steps,
+                    'id'         => 1,
+                    'lvl'        => 0,
+                    'resourceId' => null,
+                    'name'       => $this->getName(),
+                    'withTutor'  => false,
+                    'children'   => $steps,
                 ),
             );
         }
