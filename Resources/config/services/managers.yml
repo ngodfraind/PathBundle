@@ -23,15 +23,17 @@ services:
         class: %innova_path.manager.path_template.class%
         arguments:
             objectManager: @doctrine.orm.entity_manager
-        
+
     # Step manager
-    innova_path.manager.step: 
+    innova_path.manager.step:
         class: %innova_path.manager.step.class%
-        arguments: 
+        arguments:
             om:              @doctrine.orm.entity_manager
             resourceManager: @claroline.manager.resource_manager
             session:         @session
             translator:      @translator
+            container:       @service_container
+            maskManager:     @claroline.manager.mask_manager
 
     # User Progression manager
     innova_path.manager.user_progression:

@@ -166,6 +166,15 @@ class PathImporter extends Importer implements ConfigurationInterface, RichTextI
 
     public function export(Workspace $workspace, array &$files, $object)
     {
-        return $this->container->get('innova_path.manager.path')->export($workspace, $files, $object);
+        $_data = $this->getExtendedData();
+        $_files = $this->getFiles();
+
+        return $this->container->get('innova_path.manager.path')->export(
+            $workspace,
+            $files,
+            $object,
+            $_data,
+            $_files
+        );
     }
 }

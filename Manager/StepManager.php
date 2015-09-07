@@ -11,6 +11,8 @@ use Innova\PathBundle\Entity\Step;
 use Innova\PathBundle\Entity\Path\Path;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Translation\TranslatorInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Claroline\CoreBundle\Manager\MaskManager;
 
 class StepManager
 {
@@ -39,22 +41,40 @@ class StepManager
     protected $resourceManager;
 
     /**
+     * Container Interface
+     * @var Symfony\Component\DependencyInjection\ContainerInterface
+     */
+    protected $container;
+
+    /**
+     * @var MaskManager
+     */
+    protected $maskManager;
+
+    /**
      * Class constructor
      * @param \Doctrine\Common\Persistence\ObjectManager                 $om
      * @param \Claroline\CoreBundle\Manager\ResourceManager              $resourceManager
      * @param \Symfony\Component\HttpFoundation\Session\SessionInterface $session
      * @param \Symfony\Component\Translation\TranslatorInterface         $translator
+     * @param \Symfony\Component\DependencyInjection\ContainerInterface  $container
+     * @param \Claroline\CoreBundle\Manager\MaskManager                  $maskManager
      */
     public function __construct(
         ObjectManager            $om,
         ResourceManager          $resourceManager,
         SessionInterface         $session,
-        TranslatorInterface      $translator)
+        TranslatorInterface      $translator,
+        ContainerInterface       $container,
+        MaskManager              $maskManager
+    )
     {
         $this->om              = $om;
         $this->resourceManager = $resourceManager;
         $this->session         = $session;
         $this->translator      = $translator;
+        $this->container       = $container;
+        $this->maskManager     = $maskManager;
     }
 
     /**
@@ -301,7 +321,7 @@ class StepManager
      * @param  \Innova\PathBundle\Entity\Step $step
      * @return array
      */
-    public function export(Step $step)
+    public function export(Step $step, array &$_data, array &$_files)
     {
         $parent = $step->getParent();
         $activity = $step->getActivity();
@@ -317,6 +337,7 @@ class StepManager
         );
 
         $inheritedResources = $step->getInheritedResources();
+
         foreach ($inheritedResources as $inherited) {
             $data['inheritedResources'][] = array (
                 'resource' => $inherited->getResource()->getId(),
@@ -324,6 +345,60 @@ class StepManager
             );
         }
 
+        if (!$this->container->get('claroline.importer.rich_text_formatter')->getItemFromUid($step->getId(), $_data)) {
+            $this->createActivityFolder($_data);
+            $node = $this->resourceManager->getNode($step->getId());
+
+            if ($node && $node->getResourceType() === 'activity') {
+                $el = $this->container->get('claroline.importer.rich_text_formatter')
+                    ->getImporterByName('resource_manager')->getResourceElement(
+                        $node,
+                        $node->getWorkspace(),
+                        $_files,
+                        true
+                    );
+                $el['item']['parent'] = 'activity_folder';
+                $el['item']['roles'] = array(array('role' => array(
+                    'name'   => 'ROLE_USER',
+                    'rights' => $this->maskManager->decodeMask(7, $this->resourceManager->getResourceTypeByName('activity'))
+                )));
+                $_data['items'][] = $el;
+            }
+        }
+
         return $data;
+    }
+
+    private function createActivityFolder(array &$_data)
+    {
+        if ($this->activityFolderExists($_data)) return null;
+
+        $roles = array();
+        $roles[] = array('role' =>array(
+            'name'   => 'ROLE_USER',
+            'rights' => $this->maskManager->decodeMask(7, $this->resourceManager->getResourceTypeByName('directory'))
+        ));
+
+        $parentId = $_data['root']['uid'];
+
+        $_data['directories'][] = array('directory' => array(
+            'name'      => 'activity_folder',
+            'creator'   => null,
+            'parent'    => $parentId,
+            'published' => true,
+            'uid'       => 'activity_folder',
+            'roles'     => $roles,
+            'index'     => null
+        ));
+    }
+
+    private function activityFolderExists(array &$_data)
+    {
+        if (!isset($data['directories'])) return false;
+        foreach ($data['directories'] as $directory) {
+            if ($directory['directory']['uid'] === 'activity_folder') return true;
+        }
+
+        return false;
     }
 }

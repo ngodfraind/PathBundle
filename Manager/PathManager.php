@@ -10,7 +10,6 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Library\Security\Utilities;
 use Symfony\Component\Finder\Exception\AccessDeniedException;
-
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Innova\PathBundle\Entity\Path\Path;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -66,7 +65,8 @@ class PathManager
         TokenStorageInterface         $securityToken,
         ResourceManager               $resourceManager,
         Utilities                     $utils,
-        StepManager                   $stepManager)
+        StepManager                   $stepManager
+    )
     {
         $this->om              = $objectManager;
         $this->securityAuth    = $securityAuth;
@@ -257,7 +257,7 @@ class PathManager
         return $this;
     }
 
-    public function export(Workspace $workspace, array &$files, Path $path)
+    public function export(Workspace $workspace, array &$files, Path $path, array &$_data, array &$_files)
     {
         $data = array ();
 
@@ -285,7 +285,7 @@ class PathManager
         if ($path->isPublished()) {
             $stepsData = array ();
             foreach ($path->getSteps() as $step) {
-                $stepsData[] = $this->stepManager->export($step);
+                $stepsData[] = $this->stepManager->export($step, $_data, $_files);
             }
 
             $data['steps'] = $stepsData;
