@@ -294,6 +294,8 @@ class PathListener extends ContainerAware
     {
         $manager = $this->container->get('claroline.manager.resource_manager');
         $resourceNode = $manager->getNode($resource->resourceId);
+        //more tolerant to corrupted datatree
+        if (!$resourceNode) return;
         $resource->resourceId = $processedNodes[$resourceNode->getId()]->getId();
     }
 }
